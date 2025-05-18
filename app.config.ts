@@ -1,6 +1,19 @@
 import { ExpoConfig, ConfigContext } from 'expo/config';
 
-export default ({ config }: ConfigContext): ExpoConfig => ({
+// Define a type for your custom extra config
+type CustomExtraConfig = {
+  supabaseUrl?: string;
+  supabaseAnonKey?: string;
+  unsplashAccessKey?: string;
+  androidClientId?: string;
+  iosClientId?: string;
+  webClientId?: string;
+  eas: {
+    projectId: string;
+  };
+};
+
+export default ({ config }: ConfigContext): ExpoConfig & { extra: CustomExtraConfig } => ({
   ...config,
   name: 'Wallpaper',
   slug: 'wallpaper',
@@ -41,10 +54,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     androidClientId: process.env.ANDROID_CLIENT_ID,
     iosClientId: process.env.IOS_CLIENT_ID,
     webClientId: process.env.WEB_CLIENT_ID,
+    eas: {
+      projectId: "8d5f908e-0aaa-4446-abcd-d1f0c309cc6c"
+    }
   },
   plugins: [
     'expo-router',
-    "expo-secure-store",
+    'expo-secure-store',
     [
       'expo-media-library',
       {

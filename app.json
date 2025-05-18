@@ -2,7 +2,7 @@
   "expo": {
     "plugins": [
       [
-        "expo-media-library", 
+        "expo-media-library",
         {
           "photosPermission": "Allow access to photos for wallpaper features",
           "isAccessMediaLocationEnabled": true
@@ -16,6 +16,15 @@
         "READ_MEDIA_IMAGES"
       ]
     },
-    "newArchEnabled": true
+    "newArchEnabled": true,
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "8d5f908e-0aaa-4446-abcd-d1f0c309cc6c"
+      }
+    },
+    "owner": "sarcastic-soul"
   }
 }
