@@ -1,5 +1,21 @@
 {
   "expo": {
+    "plugins": [
+      [
+        "expo-media-library", 
+        {
+          "photosPermission": "Allow access to photos for wallpaper features",
+          "isAccessMediaLocationEnabled": true
+        }
+      ]
+    ],
+    "android": {
+      "permissions": [
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES"
+      ]
+    },
     "newArchEnabled": true
   }
 }

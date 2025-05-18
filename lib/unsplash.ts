@@ -39,9 +39,9 @@ export async function searchPhotos({
   return response.json();
 }
 
-export async function getRandomPhotos(count = 30) {
+export async function getRandomPhotos(page = 1, per_page = 30) {
   const response = await fetch(
-    `${UNSPLASH_API_URL}/photos/random?count=${count}`,
+    `${UNSPLASH_API_URL}/photos?page=${page}&per_page=${per_page}`,
     {
       headers: {
         Authorization: `Client-ID ${ACCESS_KEY}`,

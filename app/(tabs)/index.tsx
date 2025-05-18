@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+
 import {
   View,
   StyleSheet,
@@ -12,21 +13,52 @@ import {
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 import { getRandomPhotos } from '../../lib/unsplash';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 const COLUMN_WIDTH = width / 2;
 
+function PhotoItem({ item }) {
+  const [imageLoading, setImageLoading] = useState(true);
+
+  return (
+    <Link href={`/photo/${item.id}`} asChild>
+      <Pressable style={styles.photoContainer}>
+        {imageLoading && (
+          <View style={styles.skeleton}>
+            <ActivityIndicator size="small" color="#888" />
+          </View>
+        )}
+        <Image
+          source={{ uri: item.urls.regular }}
+          style={styles.photo}
+          contentFit="cover"
+          transition={300}
+          cachePolicy="disk"
+          onLoadEnd={() => setImageLoading(false)}
+        />
+      </Pressable>
+    </Link>
+  );
+}
+
 export default function ExploreScreen() {
-  const [photos, setPhotos] = useState<{ id: string; urls: { regular: string } }[]>([]);
+  const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [page, setPage] = useState(1);
 
-  const loadPhotos = useCallback(async () => {
+  const loadPhotos = useCallback(async (pageToLoad = 1) => {
+    if (pageToLoad === 1) {
+      setLoading(true);
+    }
+
     try {
-      const data = await getRandomPhotos(30);
-      setPhotos(data);
+      const data = await getRandomPhotos(30, pageToLoad);
+      setPhotos(prev =>
+        pageToLoad === 1 ? data : [...prev, ...data]
+      );
+      setPage(pageToLoad);
     } catch (error) {
       console.error('Error loading photos:', error);
     } finally {
@@ -37,14 +69,20 @@ export default function ExploreScreen() {
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    loadPhotos();
+    loadPhotos(1);
   }, [loadPhotos]);
+
+  const loadMorePhotos = () => {
+    if (!loading) {
+      loadPhotos(page + 1);
+    }
+  };
 
   useEffect(() => {
     loadPhotos();
   }, []);
 
-  if (loading) {
+  if (loading && photos.length === 0) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#fff" />
@@ -64,30 +102,25 @@ export default function ExploreScreen() {
         </View>
       </View>
 
-
       <FlatList
         data={photos}
         numColumns={2}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={{ paddingTop: 130 }} // increased padding
         keyExtractor={(item) => item.id}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            progressViewOffset={130}  // e.g. 80 or 130
+          />
         }
-        renderItem={({ item }) => (
-          <Link href={`/photo/${item.id}`} asChild>
-            <Pressable style={styles.photoContainer}>
-              <Image
-                source={{ uri: item.urls.regular }}
-                style={styles.photo}
-                contentFit="cover"
-                transition={1000}
-              />
-            </Pressable>
-          </Link>
-        )}
+        onEndReached={loadMorePhotos}
+        onEndReachedThreshold={0.5}
+        renderItem={({ item }) => <PhotoItem item={item} />}
       />
     </View>
   );
+
 }
 
 const styles = StyleSheet.create({
@@ -110,9 +143,9 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 20,
     paddingHorizontal: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)', 
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     borderBottomWidth: 2,
-    borderBottomColor: 'rgba(143, 141, 141, 0.2)', 
+    borderBottomColor: 'rgba(143, 141, 141, 0.2)',
   },
   headerContent: {
     flexDirection: 'row',
@@ -142,5 +175,15 @@ const styles = StyleSheet.create({
   photo: {
     flex: 1,
     borderRadius: 12,
+  },
+  skeleton: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#1e1e1e',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
   },
 });

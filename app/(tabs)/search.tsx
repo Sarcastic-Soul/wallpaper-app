@@ -11,7 +11,6 @@ import {
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 import { searchPhotos } from '../../lib/unsplash';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 
 const COLORS = [

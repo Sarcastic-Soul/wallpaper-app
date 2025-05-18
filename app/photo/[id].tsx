@@ -11,13 +11,11 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Image } from 'expo-image';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import * as MediaLibrary from 'expo-media-library';
 import * as FileSystem from 'expo-file-system';
 import Constants from 'expo-constants';
-import ManageWallpaper, { TYPE } from 'react-native-manage-wallpaper';  // data type of TYPE is not defined in the package
-// import * as Wallpaper from 'expo-wallpaper';
+import { setWallpaper, TYPE_SCREEN } from 'rn-wallpapers';
 import { useAuth } from '../../context/auth';
 import { supabase } from '../../lib/supabase';
 
@@ -103,63 +101,42 @@ export default function PhotoScreen() {
   const downloadPhoto = async () => {
     try {
       const { status } = await MediaLibrary.requestPermissionsAsync();
+
       if (status !== 'granted') {
-        Alert.alert('Permission needed', 'Please grant access to save photos');
+        Alert.alert('Permission required',
+          'Enable photo access in settings to save wallpapers');
         return;
       }
 
-      if (!photo) {
-        Alert.alert('Error', 'Photo not available');
-        return;
-      }
+      const downloadResult = await FileSystem.downloadAsync(
+        `${photo.urls.full}?client_id=${UNSPLASH_KEY}`,
+        FileSystem.cacheDirectory + `${id}.jpg`
+      );
 
-      const uri = photo.urls.full;
-      const fileUri = `${FileSystem.cacheDirectory}${id}.jpg`;
+      const asset = await MediaLibrary.createAssetAsync(downloadResult.uri);
+      await MediaLibrary.addAssetsToAlbumAsync([asset], 'Wallpapers', false);
 
-      const downloadResult = await FileSystem.downloadAsync(uri, fileUri);
-      await MediaLibrary.saveToLibraryAsync(downloadResult.uri);
-
-      Alert.alert('Success', 'Photo saved to gallery!');
+      Alert.alert('Success', 'Saved to Wallpapers album');
     } catch (error) {
-      console.error('Error downloading photo:', error);
-      Alert.alert('Error', 'Failed to download photo');
+      console.error('Download failed:', error);
+      Alert.alert('Error', 'Failed to save - try development build');
     }
   };
 
-  const setAsWallpaper = async (type: string) => {
-    try {
-      if (Platform.OS === 'web') {
-        Alert.alert('Not available', 'This feature is not available on web');
-        return;
-      }
+  const setAsWallpaper = async (url: string) => {
+    const { uri } = await FileSystem.downloadAsync(
+      url,
+      FileSystem.cacheDirectory + 'wallpaper.jpg'
+    );
 
-      if (!photo) {
-        Alert.alert('Error', 'Photo not available');
-        return;
-      }
-
-      const uri = photo.urls.full;
-
-      ManageWallpaper.setWallpaper(
-        { uri },
-        (res: { status: string }) => {
-          if (res.status === 'success') {
-            Alert.alert('Success', 'Wallpaper set successfully!');
-          } else {
-            Alert.alert('Error', 'Failed to set wallpaper');
-          }
-        },
-        TYPE[type.toUpperCase() as keyof typeof TYPE]
-      );
-    } catch (error) {
-      console.error('Error setting wallpaper:', error);
-      Alert.alert('Error', 'Failed to set wallpaper');
-    }
+    await setWallpaper(
+      { uri },
+      TYPE_SCREEN.BOTH
+    );
   };
 
 
   const sharePhoto = async () => {
-
     if (!photo) {
       Alert.alert('Error', 'Photo not available');
       return;
@@ -167,8 +144,8 @@ export default function PhotoScreen() {
 
     try {
       await Share.share({
+        message: `Check out this amazing wallpaper by ${photo.user.name} on Unsplash: ${photo.links.html}`,
         url: photo.links.html,
-        message: `Check out this amazing wallpaper by ${photo.user.name} on Unsplash`,
       });
     } catch (error) {
       console.error('Error sharing photo:', error);
